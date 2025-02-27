@@ -1,0 +1,44 @@
+name: Run tests
+
+on:
+  workflow_dispatch:
+  
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    container:
+      image: node:20
+
+    services:
+      selenium:
+        image: selenium/standalone-chrome
+        options: --shm-size=2gb
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: echo "SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub" >> $GITHUB_ENV
+
+      - run: npm install
+        working-directory: tests
+
+      - run: ls -l
+        working-directory: tests
+
+      - run: npx mocha "./*.spec.js" --timeout 30000
+        working-directory: tests
+
+      - run: mkdir -p screenshots
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: screenshots/
