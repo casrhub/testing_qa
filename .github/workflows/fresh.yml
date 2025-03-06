@@ -1,39 +1,61 @@
-name: Run tests
+name: Run Frontend Tests
 
 on:
   push:
     branches:
       - main  # Runs on merges to main
-  pull_request:  # Runs automatically on pull requests
-  workflow_dispatch:  # Allows manual trigger
+  pull_request:
+  workflow_dispatch:
+
 jobs:
   test:
-    name: Test
+    name: Frontend Tests
     runs-on: ubuntu-22.04
     
     container:
       image: node:20
       
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - uses: browser-actions/setup-chrome@v1
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json  # Cache dependencies
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Set up Chrome for testing
+        uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: 120
           install-dependencies: true
-      - run: |
-          cd src
-          python3 -m http.server 8000 &
-          sleep 10 &&
-          curl http://localhost:8000
-          cd ..
-          npm install
-          ./node_modules/.bin/mocha "**/*.spec.js"
-          
-      - uses: actions/upload-artifact@v4
+
+      - name: Start test server (from frontend/src/)
+        run: |
+          cd frontend/src
+          npx http-server -p 8000 --host 0.0.0.0 &  # Serve from the correct directory
+          sleep 10  # Wait for server to start
+          curl http://localhost:8000  # Check if server is running
+
+      - name: Debug - Verify Server Accessibility
+        run: |
+          curl -I http://localhost:8000 || echo "Server is NOT reachable"
+
+      - name: Run tests
+        run: |
+          cd frontend
+          ./node_modules/.bin/mocha "tests/**/*.spec.js"
+
+      - name: Upload test artifacts (e.g., screenshots)
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: screenshots
-          path: screenshots/
+          path: frontend/screenshots/
