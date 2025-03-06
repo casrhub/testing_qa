@@ -41,8 +41,13 @@ jobs:
         run: |
           cd frontend
           npx http-server -p 8000 &  # Start a test server
-          sleep 10  # Wait for server to start
-          curl http://localhost:8000  # Check if server is running
+          echo "Waiting for server to start..."
+          for i in {1..30}; do  # Try for 30 seconds
+            curl -s http://localhost:8000 > /dev/null && break
+            echo "Server not ready yet..."
+            sleep 2
+          done
+          echo "Server is running!"
 
       - name: Run tests
         run: |
