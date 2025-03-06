@@ -37,21 +37,28 @@ jobs:
           chrome-version: 120
           install-dependencies: true
 
-      - name: Start test server (serve frontend/src/)
+      - name: Start test server (ensure it stays alive)
         run: |
           cd frontend
-          npx http-server src -p 8000 --host 0.0.0.0 &  # Serve src/ directory
-          sleep 10  # Wait for server to start
-          curl http://localhost:8000  # Verify server is running
+          nohup npx http-server src -p 8000 --host 0.0.0.0 > http-server.log 2>&1 &  # Keep server running in background
+          echo "Waiting for server to start..."
+          for i in {1..30}; do  
+            curl -s http://localhost:8000 > /dev/null && break
+            echo "Server not ready yet..."
+            sleep 2
+          done
+          echo "Server is running!"
 
       - name: Debug - Verify Server Accessibility
         run: |
           curl -I http://localhost:8000 || echo "Server is NOT reachable"
+          echo "Server log:"
+          cat frontend/http-server.log
 
       - name: Run tests
         run: |
           cd frontend
-          ./node_modules/.bin/mocha "tests/**/*.spec.js"
+          ./node_modules/.bin/mocha "tests/**/*.spec.js" --timeout 30000  # Increase timeout for reliability
 
       - name: Upload test artifacts (e.g., screenshots)
         uses: actions/upload-artifact@v4
