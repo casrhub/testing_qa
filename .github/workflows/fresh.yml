@@ -28,7 +28,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd frontend
           npm install
 
       - name: Set up Chrome for testing
@@ -39,14 +38,12 @@ jobs:
 
       - name: Start test server
         run: |
-          cd frontend
           npx http-server -p 8000 &  # Start a test server
           sleep 10  # Wait for server to start
           curl http://localhost:8000  # Check if server is running
 
       - name: Run tests
         run: |
-          cd frontend
           ./node_modules/.bin/mocha "**/*.spec.js"
 
       - name: Upload test artifacts (e.g., screenshots)
