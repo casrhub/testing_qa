@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/math")
+@CrossOrigin(origins = "http://localhost:8000") // Adjust the port if needed
 public class MathController {
 
     @GetMapping("/add")
