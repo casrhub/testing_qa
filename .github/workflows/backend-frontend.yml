@@ -84,6 +84,14 @@ jobs:
         with:
           chrome-version: 120
           install-dependencies: true
+          
+      - name: Start Backend API
+           run: |
+            apt-get update && apt-get install -y openjdk-17-jdk maven curl
+            cd backend/springboot-backend
+            mvn clean spring-boot:run &
+            echo "Waiting for backend to start..."
+            sleep 10
 
       - name: Start test server
         run: |
