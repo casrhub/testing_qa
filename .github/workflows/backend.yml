@@ -45,6 +45,6 @@ jobs:
            echo "sever ready for testing"
            npm install -g newman
            newman -v
-           newman run src/test/integration/calculator_postman_collection.json
+           newman run src/test/integration/calculator.postman_collection.json
 
            

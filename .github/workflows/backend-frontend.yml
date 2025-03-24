@@ -43,69 +43,46 @@ jobs:
 
       - name: Start Spring Boot Backend
         run: |
-          cd backend/springboot-backend
-          # Start the backend in background with nohup, so it won't die.
-          nohup mvn clean spring-boot:run > backend.log 2>&1 &
-          
+          cd backend/springboot-backend  
+          mvn clean spring-boot:run &
           echo "Waiting for backend to start..."
           attempt_counter=0
           max_attempts=5
-          until curl --output /dev/null --silent --head --fail http://localhost:8080/math/add?num1=2&num2=10; do
-            if [ "$attempt_counter" -eq "$max_attempts" ]; then
+          until $(curl --output /dev/null --silent --head --fail http://localhost:8080/math/add?num1=2&num2=10); do
+            if [ ${attempt_counter} -eq ${max_attempts} ]; then
               echo "Backend failed to start in time"
-              # Show any backend logs we have so far:
-              echo "--- BACKEND LOGS (so far) ---"
-              cat backend.log || true
               exit 1
             fi
-            echo "Waiting for backend... attempt $attempt_counter"
+            echo "Waiting for backend... attempt ${attempt_counter}"
             attempt_counter=$((attempt_counter + 1))
             sleep 5
           done
           echo "Backend is up!"
-
-      - name: Debug - Check Backend Logs Before Postman
-        run: |
-          echo "--- BACKEND LOGS (pre-Postman) ---"
-          cat backend/springboot-backend/backend.log || echo "No backend.log found"
 
       - name: Run Postman Integration Tests
         run: |
           npm install -g newman
           newman run backend/springboot-backend/src/test/integration/calculator.postman_collection.json
 
-      - name: Ensure Backend Still Running After Postman
-        run: |
-          echo "Checking if backend is still alive after Postman tests..."
-          curl -f http://localhost:8080/math/add?num1=1&num2=2
-          echo "Yes, backend is still responsive!"
-
-      - name: Debug - Check Backend Logs After Postman
-        run: |
-          echo "--- BACKEND LOGS (post-Postman) ---"
-          cat backend/springboot-backend/backend.log
-
       - name: Start Frontend Server
         run: |
-          echo "Starting the frontend server..."
+          curl -f http://localhost:8080/math/add?num1=1&num2=2
+
           cd frontend
           mkdir -p screenshots
           nohup npx http-server src -p 8000 --host 0.0.0.0 > http-server.log 2>&1 &
-          
           echo "Waiting for frontend to be available..."
           for i in {1..30}; do
-            if curl -s http://localhost:8000 > /dev/null; then
-              echo "Frontend server is running!"
-              break
-            fi
+            curl -s http://localhost:8000 > /dev/null && break
             echo "Server not ready yet..."
             sleep 2
           done
+          echo "Frontend server is running!"
 
       - name: Debug - Verify Frontend Server
         run: |
           curl -I http://localhost:8000 || echo "Server is NOT reachable"
-          echo "--- FRONTEND SERVER LOG ---"
+          echo "--- Server Log ---"
           cat frontend/http-server.log
 
       - name: Run Frontend Tests
