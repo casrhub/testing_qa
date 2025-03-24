@@ -1,44 +1,85 @@
-- name: Full Stack Tests in One Step
-  run: |
-    # 1) Build and start the backend in the background
-    cd backend/springboot-backend
-    mvn clean install
-    nohup mvn spring-boot:run > ../../backend.log 2>&1 &
-    echo "Waiting for backend..."
+name: CI Pipeline
 
-    # Wait for the backend
-    for i in {1..10}; do
-      if curl -s http://localhost:8080/math/add?num1=2&num2=10 ; then
-        echo "Backend is up!"
-        break
-      fi
-      echo "Retry #$i: not ready yet"
-      sleep 3
-    done
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
 
-    # 2) Run backend (Postman) tests
-    npm install -g newman
-    newman run src/test/integration/calculator.postman_collection.json
-    cd ../..
+jobs:
+  ci:
+    runs-on: ubuntu-latest
 
-    # 3) Start the frontend in the background from `frontend/src`
-    cd frontend/src
-    # Create screenshots folder **one level up** if you want them in `frontend/screenshots`:
-    mkdir -p ../screenshots
+    steps:
+      - uses: actions/checkout@v4
 
-    python3 -m http.server 8000 &
-    echo "Waiting for frontend..."
-    for i in {1..10}; do
-      if curl -s http://localhost:8000/index.html > /dev/null ; then
-        echo "Frontend is up!"
-        break
-      fi
-      sleep 2
-    done
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
 
-    # 4) Go back up to `frontend`, install, then into `tests`
-    cd ..
-    npm install
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    cd tests
-    ../node_modules/.bin/mocha "*.js" --timeout 30000
+      - name: Set up Chrome for Frontend
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: 120
+          install-dependencies: true
+
+      - name: Full Stack Tests in One Step
+        run: |
+          # 1) Build and start the backend in the background
+          cd backend/springboot-backend
+          mvn clean install
+          nohup mvn spring-boot:run > ../../backend.log 2>&1 &
+          echo "Waiting for backend..."
+
+          # Wait for the backend
+          for i in {1..10}; do
+            if curl -s http://localhost:8080/math/add?num1=2&num2=10 ; then
+              echo "Backend is up!"
+              break
+            fi
+            echo "Retry #$i: not ready yet"
+            sleep 3
+          done
+
+          # 2) Run backend (Postman) tests
+          npm install -g newman
+          newman run src/test/integration/calculator.postman_collection.json
+          cd ../..
+
+          # 3) Start the frontend in the background from `frontend/src`
+          cd frontend/src
+          # Create screenshots folder **one level up** if you want them in `frontend/screenshots`:
+          mkdir -p ../screenshots
+
+          python3 -m http.server 8000 &
+          echo "Waiting for frontend..."
+          for i in {1..10}; do
+            if curl -s http://localhost:8000/index.html > /dev/null ; then
+              echo "Frontend is up!"
+              break
+            fi
+            sleep 2
+          done
+
+          # 4) Go back up to `frontend`, install, then into `tests`
+          cd ..
+          npm install
+
+          cd tests
+          ../node_modules/.bin/mocha "*.js" --timeout 30000
+
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: frontend/screenshots/
