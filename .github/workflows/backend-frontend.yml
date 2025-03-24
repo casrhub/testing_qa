@@ -60,9 +60,6 @@ jobs:
     name: Frontend Tests
     runs-on: ubuntu-22.04
 
-    container:
-      image: node:20
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
