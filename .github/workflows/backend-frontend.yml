@@ -51,7 +51,7 @@ jobs:
         run: |
           npm install -g newman
           newman -v
-          newman run src/test/integration/Calculator\ Postman.postman_collection.json
+          newman run src/test/integration/calculator_postman_collection.json
 
   frontend-tests:
     name: Frontend Tests
