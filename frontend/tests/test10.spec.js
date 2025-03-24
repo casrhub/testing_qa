@@ -17,18 +17,7 @@ describe('Test 10', function () {
         driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
     });
 
-    afterEach(async function () {
-        try {
-            const alert = await driver.switchTo().alert();
-            console.warn("Dismissing alert:", await alert.getText());
-            await alert.accept();
-        } catch (e) {}
-        const filename = this.currentTest.fullTitle().replace(/['"]+/g, '').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        const screenshot = await driver.takeScreenshot();
-        await fs.promises.writeFile(`./screenshots/${filename}.png`, screenshot, 'base64');
-        if (driver) await driver.quit();
-    });
-
+   
  
 it('10 - 4, should display: 6', async function () {
     await driver.get("http://127.0.0.1:8000/index.html");
