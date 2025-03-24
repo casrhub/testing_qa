@@ -21,36 +21,51 @@ describe('Test 14', function () {
     });
 
     afterEach(async function () {
-        if (driver) {
+        try {
+            // Pause between tests
+            await driver.sleep(1000);
+
+            // Take screenshot on failure or for diagnostics
             const filename = this.currentTest.fullTitle()
                 .replace(/['"]+/g, '')
                 .replace(/[^a-z0-9]/gi, '_')
                 .toLowerCase();
             const encodedString = await driver.takeScreenshot();
             await fs.promises.writeFile(`./screenshots/${filename}.png`, encodedString, 'base64');
-            await driver.quit();
+        } catch (e) {
+            console.error("Error during afterEach:", e);
+        } finally {
+            if (driver) await driver.quit();
         }
     });
 
     it('Test 14', async function () {
         await driver.get("http://127.0.0.1:8000/index.html");
 
-        // Enter first number (10)
-        await driver.findElement(By.id("num1")).click();
+        // Enter first number
         await driver.findElement(By.id("num1")).sendKeys("10");
 
-        // Enter second number (-4)
-        await driver.findElement(By.id("num2")).click();
+        // Enter second number
         await driver.findElement(By.id("num2")).sendKeys("4");
 
-        // Click the subtraction button (assuming it's the second button)
+        // Click subtraction button
         await driver.findElement(By.css("button:nth-child(2)")).click();
 
-        // Wait for the result to be updated
+        // OPTIONAL: handle alert in case backend fails
+        try {
+            await driver.wait(until.alertIsPresent(), 1000);
+            const alert = await driver.switchTo().alert();
+            console.warn("Alert popped up:", await alert.getText());
+            await alert.accept();
+        } catch (e) {
+            // no alert – continue
+        }
+
+        // Wait for result text to appear and validate
         await driver.wait(until.elementLocated(By.id("result")), 5000);
         const resultText = await driver.findElement(By.id("result")).getText();
 
-        // Validate that the result is correctly displayed as "Result: 5"
-        assert.strictEqual(resultText, "Result: 6");
+        // Assertion
+        assert.strictEqual(resultText, "Result: 6"); // ⚠️ 10 - 4 = 6
     });
 });
