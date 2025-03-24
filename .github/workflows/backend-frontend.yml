@@ -66,7 +66,7 @@ jobs:
 
       - name: Start Frontend Server
         run: |
-          curl -f http://localhost:8080/math/add?num1=1&num2=2
+          curl -f  http://localhost:8080/math/add?num1=2&num2=10
 
           cd frontend
           mkdir -p screenshots
