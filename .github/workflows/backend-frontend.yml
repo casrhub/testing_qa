@@ -66,6 +66,8 @@ jobs:
 
       - name: Start Frontend Server
         run: |
+          curl -f http://localhost:8080/math/add?num1=1&num2=2
+
           cd frontend
           mkdir -p screenshots
           nohup npx http-server src -p 8000 --host 0.0.0.0 > http-server.log 2>&1 &
