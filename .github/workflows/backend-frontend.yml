@@ -55,7 +55,7 @@ jobs:
           cd ../..
 
           # 3) Start the frontend in the background
-          cd frontend
+          cd frontend/src
           mkdir -p screenshots
           python3 -m http.server 8000 &
           echo "Waiting for frontend..."
