@@ -1,98 +1,30 @@
-name: Full Stack CI
+- name: Start Backend & Run All Tests
+  run: |
+    cd backend/springboot-backend
+    mvn clean spring-boot:run > backend.log 2>&1 &
+    # Wait for it
+    for i in {1..10}; do
+      curl --silent --fail http://localhost:8080/math/add?num1=2&num2=10 && break
+      echo "Waiting..."
+      sleep 3
+    done
+    echo "Backend is up!"
 
-on:
-  workflow_dispatch:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    # Now run Postman
+    npm install -g newman
+    newman run src/test/integration/calculator.postman_collection.json
 
-jobs:
-  full-stack-tests:
-    name: Full Stack Tests
-    runs-on: ubuntu-latest
+    # Now do the extra curl check
+    curl -v http://localhost:8080/math/add?num1=2&num2=10
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install Frontend Dependencies
-        run: |
-          cd frontend
-          npm install
-
-      - name: Set up Chrome for Frontend Tests
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: 120
-          install-dependencies: true
-
-      - name: Start Spring Boot Backend
-        run: |
-          cd backend/springboot-backend  
-          mvn clean spring-boot:run &
-          echo "Waiting for backend to start..."
-          attempt_counter=0
-          max_attempts=5
-          until $(curl --output /dev/null --silent --head --fail http://localhost:8080/math/add?num1=2&num2=10); do
-            if [ ${attempt_counter} -eq ${max_attempts} ]; then
-              echo "Backend failed to start in time"
-              exit 1
-            fi
-            echo "Waiting for backend... attempt ${attempt_counter}"
-            attempt_counter=$((attempt_counter + 1))
-            sleep 5
-          done
-          echo "Backend is up!"
-
-      - name: Run Postman Integration Tests
-        run: |
-          npm install -g newman
-          newman run backend/springboot-backend/src/test/integration/calculator.postman_collection.json
-
-      - name: Start Frontend Server
-        run: |
-          curl -f  http://localhost:8080/math/add?num1=2&num2=10
-
-          cd frontend
-          mkdir -p screenshots
-          nohup npx http-server src -p 8000 --host 0.0.0.0 > http-server.log 2>&1 &
-          echo "Waiting for frontend to be available..."
-          for i in {1..30}; do
-            curl -s http://localhost:8000 > /dev/null && break
-            echo "Server not ready yet..."
-            sleep 2
-          done
-          echo "Frontend server is running!"
-
-      - name: Debug - Verify Frontend Server
-        run: |
-          curl -I http://localhost:8000 || echo "Server is NOT reachable"
-          echo "--- Server Log ---"
-          cat frontend/http-server.log
-
-      - name: Run Frontend Tests
-        run: |
-          cd frontend
-          ./node_modules/.bin/mocha "tests/**/*.spec.js" --timeout 30000
-
-      - name: Upload Frontend Test Artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: screenshots
-          path: frontend/screenshots/
+    # Start the frontend & run the UI tests
+    cd ../../frontend
+    npm install
+    nohup npx http-server src -p 8000 --host 0.0.0.0 > http-server.log 2>&1 &
+    # Wait for the UI
+    for i in {1..10}; do
+      curl -s http://localhost:8000 && break
+      sleep 3
+    done
+    echo "Frontend is up!"
+    ./node_modules/.bin/mocha "tests/**/*.spec.js"
