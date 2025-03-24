@@ -69,7 +69,7 @@ jobs:
 
           # 4) Now run your UI tests (which expect the backend is still running)
           npm install
-          cd test
+          cd tests
           ../node_modules/.bin/mocha *.js --timeout 30000
 
       - name: Upload Artifacts
