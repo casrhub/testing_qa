@@ -84,7 +84,7 @@ jobs:
         with:
           chrome-version: 120
           install-dependencies: true
-          
+        # Debuggin 
       - name: Start Backend API
            run: |
             apt-get update && apt-get install -y openjdk-17-jdk maven curl
