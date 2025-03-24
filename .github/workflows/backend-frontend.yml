@@ -30,7 +30,7 @@ jobs:
 
       - name: Build and Start Spring Boot App
         run: |
-          cd backend/calculator
+          cd backend/spring-bootbackend
           mvn clean spring-boot:run &
           echo "Waiting 5 seconds for the server to start..."
           sleep 5
