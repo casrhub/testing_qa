@@ -53,7 +53,8 @@ jobs:
           newman -v
           pwd
           ls -R
-          newman run src/test/integration/calculator.postman_collection.json
+          newman run backend/springboot-backend/src/test/integration/calculator.postman_collection.json
+
 
   frontend-tests:
     name: Frontend Tests
