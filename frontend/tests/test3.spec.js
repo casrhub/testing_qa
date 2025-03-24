@@ -17,39 +17,6 @@ describe('Test 3', function () {
         driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
     });
 
-    afterEach(async function () {
-        if (driver) {
-            try {
-                // Attempt to dismiss any open alert, retry up to 3 times just in case
-                for (let i = 0; i < 3; i++) {
-                    try {
-                        const alert = await driver.switchTo().alert();
-                        console.warn("Dismissing alert:", await alert.getText());
-                        await alert.accept();
-                        await new Promise(resolve => setTimeout(resolve, 500)); // Small wait
-                    } catch (err) {
-                        // No alert – exit loop
-                        break;
-                    }
-                }
-            } catch (e) {
-                console.warn("Error handling alert in afterEach:", e.message);
-            }
-    
-            try {
-                const filename = this.currentTest.fullTitle()
-                    .replace(/['"]+/g, '')
-                    .replace(/[^a-z0-9]/gi, '_')
-                    .toLowerCase();
-                const screenshot = await driver.takeScreenshot();
-                await fs.promises.writeFile(`./screenshots/${filename}.png`, screenshot, 'base64');
-            } catch (e) {
-                console.warn("Screenshot error:", e.message);
-            }
-    
-            await driver.quit();
-        }
-    });
     
 
     it('69 - 3, should display: 66', async function () {
