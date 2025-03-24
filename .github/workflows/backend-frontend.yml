@@ -8,8 +8,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  backend-tests:
-    name: Backend Tests
+  full-stack-tests:
+    name: Backend + Frontend Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -27,50 +27,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Build and Start Spring Boot App
-        run: |
-          cd backend/springboot-backend  
-          mvn clean spring-boot:run &
-          echo "Waiting 5 seconds for the server to start..."
-          sleep 5
-          attempt_counter=0
-          max_attempts=5
-          until $(curl --output /dev/null --silent --head --fail http://localhost:8080/math/add?num1=2&num2=10); do
-            if [ ${attempt_counter} -eq ${max_attempts} ]; then
-              echo "Max attempts reached"
-              exit 1
-            fi
-            printf '.'
-            attempt_counter=$(($attempt_counter+1))
-            sleep 5
-          done
-          echo "Server ready for testing"
-
-      - name: Run Postman Integration Tests
-        run: |
-          npm install -g newman
-          newman -v
-          pwd
-          ls -R
-          newman run backend/springboot-backend/src/test/integration/calculator.postman_collection.json
-
-  frontend-tests:
-    name: Frontend Tests
-    runs-on: ubuntu-22.04  # ← still a VM, just not containerized
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install Frontend Dependencies
         run: |
           cd frontend
           npm install
@@ -81,15 +40,31 @@ jobs:
           chrome-version: 120
           install-dependencies: true
 
-      - name: Start Backend API
+      - name: Start Spring Boot Backend
         run: |
-          sudo apt-get update && sudo apt-get install -y openjdk-17-jdk maven curl
           cd backend/springboot-backend
           mvn clean spring-boot:run &
           echo "Waiting for backend to start..."
-          sleep 10
+          sleep 5
+          attempt_counter=0
+          max_attempts=5
+          until $(curl --output /dev/null --silent --head --fail http://localhost:8080/math/add?num1=2&num2=10); do
+            if [ ${attempt_counter} -eq ${max_attempts} ]; then
+              echo "Backend failed to start in time"
+              exit 1
+            fi
+            echo "Waiting for backend... attempt ${attempt_counter}"
+            attempt_counter=$((attempt_counter + 1))
+            sleep 5
+          done
+          echo "Backend is up!"
 
-      - name: Start frontend test server
+      - name: Run Postman Integration Tests
+        run: |
+          npm install -g newman
+          newman run backend/springboot-backend/src/test/integration/calculator.postman_collection.json
+
+      - name: Start Frontend Test Server
         run: |
           cd frontend
           npx http-server -p 8000 &
@@ -101,7 +76,7 @@ jobs:
           cd frontend
           ./node_modules/.bin/mocha "**/*.spec.js"
 
-      - name: Upload Test Artifacts
+      - name: Upload Frontend Test Artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
