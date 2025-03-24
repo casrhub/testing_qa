@@ -35,7 +35,7 @@ jobs:
           cd frontend
           npm install
 
-      - name: Set up Chrome for frontend testing
+      - name: Set up Chrome for Frontend Tests
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: 120
@@ -46,7 +46,6 @@ jobs:
           cd backend/springboot-backend  
           mvn clean spring-boot:run &
           echo "Waiting for backend to start..."
-          sleep 5
           attempt_counter=0
           max_attempts=5
           until $(curl --output /dev/null --silent --head --fail http://localhost:8080/math/add?num1=2&num2=10); do
@@ -68,25 +67,26 @@ jobs:
       - name: Start Frontend Server
         run: |
           cd frontend
-          npx http-server -p 8000 &
+          mkdir -p screenshots
+          nohup npx http-server src -p 8000 --host 0.0.0.0 > http-server.log 2>&1 &
           echo "Waiting for frontend to be available..."
-          attempt_counter=0
-          max_attempts=10
-          until curl --output /dev/null --silent --head --fail http://localhost:8000; do
-            if [ ${attempt_counter} -eq ${max_attempts} ]; then
-              echo "Frontend server failed to start"
-              exit 1
-            fi
-            printf '.'
-            attempt_counter=$((attempt_counter+1))
-            sleep 3
+          for i in {1..30}; do
+            curl -s http://localhost:8000 > /dev/null && break
+            echo "Server not ready yet..."
+            sleep 2
           done
-          echo "Frontend is up!"
+          echo "Frontend server is running!"
+
+      - name: Debug - Verify Frontend Server
+        run: |
+          curl -I http://localhost:8000 || echo "Server is NOT reachable"
+          echo "--- Server Log ---"
+          cat frontend/http-server.log
 
       - name: Run Frontend Tests
         run: |
           cd frontend
-          ./node_modules/.bin/mocha "**/*.spec.js"
+          ./node_modules/.bin/mocha "tests/**/*.spec.js" --timeout 30000
 
       - name: Upload Frontend Test Artifacts
         uses: actions/upload-artifact@v4
