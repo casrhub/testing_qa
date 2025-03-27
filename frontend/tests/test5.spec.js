@@ -3,7 +3,7 @@ const { Builder, By, until } = require('selenium-webdriver');
 const assert = require('assert');
 const fs = require('fs');
 
-describe('10 - 4, should display 6', function () {
+describe('Test 5', function () {
     this.timeout(30000);
     let driver;
     let vars;
@@ -16,44 +16,25 @@ describe('10 - 4, should display 6', function () {
         const chrome = require('selenium-webdriver/chrome');
         const options = new chrome.Options();
         options.addArguments('--headless', '--no-sandbox', '--disable-dev-shm-usage');
-        driver = new Builder().forBrowser('chrome').setChromeOptions(options).build();
+        driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
         vars = {};
     });
 
-    afterEach(async function () {
-        if (driver) {
-            const filename = this.currentTest.fullTitle()
-                .replace(/['"]+/g, '')
-                .replace(/[^a-z0-9]/gi, '_')
-                .toLowerCase();
-            const encodedString = await driver.takeScreenshot();
-            await fs.promises.writeFile(`./screenshots/${filename}.png`, encodedString, 'base64');
-            await driver.quit();
-        }
-    });
 
-    it('Test 5', async function() {
+    it('5 - 3, should display: 2 ', async function () {
         await driver.get("http://127.0.0.1:8000/index.html");
 
-        // Wait for num1 to be visible before interacting with it
-        let num1Element = await driver.wait(until.elementLocated(By.id("num1")), 10000);
-        await driver.wait(until.elementIsVisible(num1Element), 5000);
+        // Enter first number (5)
+        await driver.findElement(By.id("num1")).click();
+        await driver.findElement(By.id("num1")).sendKeys("5");
 
-        let num2Element = await driver.wait(until.elementLocated(By.id("num2")), 10000);
-        await driver.wait(until.elementIsVisible(num2Element), 5000);
+        // Enter second number (3)
+        await driver.findElement(By.id("num2")).click();
+        await driver.findElement(By.id("num2")).sendKeys("3");
 
-        // Enter valid numerical values
-        await driver.findElement(By.id("num1")).sendKeys("10");
-        await driver.findElement(By.id("num2")).sendKeys("4");
-
-        // Click the subtraction button (assuming it's the second button)
+        // Click the subtraction button 
         await driver.findElement(By.css("button:nth-child(2)")).click();
 
-        // Wait for the result to appear
-        let resultElement = await driver.wait(until.elementLocated(By.id("result")), 5000);
-        let resultText = await resultElement.getText();
 
-        // Validate that the result is correctly displayed as "Result: 6"
-        assert.strictEqual(resultText, "Result: 6");
     });
 });

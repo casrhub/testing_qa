@@ -20,17 +20,7 @@ describe('Test 12', function () {
         vars = {};
     });
 
-    afterEach(async function () {
-        if (driver) {
-            const filename = this.currentTest.fullTitle()
-                .replace(/['"]+/g, '')
-                .replace(/[^a-z0-9]/gi, '_')
-                .toLowerCase();
-            const encodedString = await driver.takeScreenshot();
-            await fs.promises.writeFile(`./screenshots/${filename}.png`, encodedString, 'base64');
-            await driver.quit();
-        }
-    });
+   
   it('Test 12 ', async function() {
     await driver.get("http://127.0.0.1:8000/index.html")
     await driver.findElement(By.id("num1")).click()
